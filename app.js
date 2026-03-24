@@ -188,18 +188,24 @@ function computeImpacted(heading) {
 
   const impacted = [];
 
+  // 🔧 FIX : créer un polygone une seule fois
+  const poly = L.polygon(polygon);
+
   SONO_MARKERS.forEach(s => {
-    const inside = L.polygon(polygon).getBounds().contains([s.lat, s.lon]);
+    const inside = poly.getBounds().contains([s.lat, s.lon]);
+
     s.marker.setStyle(
       inside
         ? { color: "#b91c1c", fillColor: "#b91c1c" }
         : { color: "#2563eb", fillColor: "#2563eb" }
     );
+
     if (inside) impacted.push(s);
   });
 
   return impacted;
 }
+
 
 /* ----------------------------------------------------------
    MAIN

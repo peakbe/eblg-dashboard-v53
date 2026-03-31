@@ -203,12 +203,14 @@ function updateRunwayPanel(runway, windDir, windSpeed, phase) {
 // SONOMÈTRES
 // ======================================================
 
+// Couleur simple (ancienne logique, encore utilisée par updateSonometers)
 function getSonometerColor(runway) {
     if (runway === "22") return "red";
     if (runway === "04") return "blue";
     return "gray";
 }
 
+// Création des marqueurs
 function initSonometers(mapInstance) {
     SONOS.forEach(s => {
 
@@ -232,6 +234,7 @@ function initSonometers(mapInstance) {
     console.log("Sonomètres initialisés :", Object.keys(sonometers).length);
 }
 
+// Coloration simple (ancienne logique)
 function updateSonometers(runway) {
     const color = getSonometerColor(runway);
 
@@ -244,6 +247,50 @@ function updateSonometers(runway) {
     });
 }
 
+// Coloration avancée (phase + piste)
+function updateSonometersAdvanced(runway, phase) {
+    // Tout en gris par défaut
+    Object.values(sonometers).forEach(s => {
+        s.marker.setStyle({ color: "gray", fillColor: "gray" });
+    });
+
+    if (runway === "UNKNOWN") return;
+
+    let green = [];
+    let red = [];
+
+    if (runway === "22") {
+        if (phase === "takeoff") {
+            green = ["F002","F003","F004","F005","F006","F007","F008","F009","F010","F011","F012","F013","F016"];
+        } else {
+            green = ["F001","F014","F015","F017"];
+        }
+    }
+
+    if (runway === "04") {
+        if (phase === "takeoff") {
+            green = ["F002","F003","F007","F008","F009","F011","F013"];
+            red   = ["F004","F005","F006","F010","F012","F016"];
+        } else {
+            green = ["F014","F015"];
+            red   = ["F001","F017"];
+        }
+    }
+
+    green.forEach(id => {
+        if (sonometers[id]) {
+            sonometers[id].marker.setStyle({ color: "green", fillColor: "green" });
+        }
+    });
+
+    red.forEach(id => {
+        if (sonometers[id]) {
+            sonometers[id].marker.setStyle({ color: "red", fillColor: "red" });
+        }
+    });
+}
+
+// Mise à jour du panneau dynamique (tri + stats + graphique)
 function updateSonometerPanel() {
     const list = document.getElementById("sono-list");
     const stats = document.getElementById("sono-stats");
@@ -260,7 +307,7 @@ function updateSonometerPanel() {
     stats.innerHTML =
         `<b>${green.length}</b> verts – <b>${red.length}</b> rouges – <b>${gray.length}</b> neutres`;
 
-    // Tri automatique
+    // Tri automatique : verts → rouges → gris
     const sorted = [...green, ...red, ...gray];
 
     // Liste
@@ -278,6 +325,7 @@ function updateSonometerPanel() {
     updateSonoChart(green.length, red.length, gray.length);
 }
 
+// Mini‑graphique (barres)
 function updateSonoChart(g, r, y) {
     const canvas = document.getElementById("sono-chart");
     if (!canvas) return;
@@ -291,10 +339,8 @@ function updateSonoChart(g, r, y) {
     const spacing = 20;
     const baseY = 55;
 
-    // Échelle simple
     const scale = 50 / total;
 
-    // Barres
     ctx.fillStyle = "green";
     ctx.fillRect(10, baseY - g * scale, barWidth, g * scale);
 
@@ -304,28 +350,10 @@ function updateSonoChart(g, r, y) {
     ctx.fillStyle = "gray";
     ctx.fillRect(10 + 2 * (barWidth + spacing), baseY - y * scale, barWidth, y * scale);
 
-    // Labels
     ctx.fillStyle = "#333";
     ctx.fillText("V", 35, baseY + 10);
     ctx.fillText("R", 35 + barWidth + spacing, baseY + 10);
     ctx.fillText("N", 35 + 2 * (barWidth + spacing), baseY + 10);
-}
-
-function updateSonometerPanel() {
-    const container = document.getElementById("sono-list");
-    if (!container) return;
-
-    const items = Object.values(sonometers).map(s => {
-        let cls = "sono-gray";
-        if (s.marker.options.color === "green") cls = "sono-green";
-        if (s.marker.options.color === "red") cls = "sono-red";
-
-        return `<div class="sono-item ${cls}">
-                    <span>${s.id}</span>
-                </div>`;
-    });
-
-    container.innerHTML = items.join("");
 }
 
 // ======================================================

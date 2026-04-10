@@ -10,13 +10,20 @@ app.use(cors({ origin: "*" }));
 async function safeFetch(url) {
     try {
         const res = await fetch(url);
-        if (!res.ok) throw new Error("HTTP " + res.status);
+
+        if (!res.ok) {
+            console.error("[FIDS ERROR] HTTP", res.status, "for", url);
+            return { fallback: true, status: res.status };
+        }
+
         return await res.json();
+
     } catch (err) {
-        console.error("[PROXY ERROR]", err);
-        return { fallback: true };
+        console.error("[FIDS ERROR] Exception:", err.message);
+        return { fallback: true, error: err.message };
     }
 }
+
 
 app.get("/metar", async (req, res) => {
     res.json(await safeFetch("https://api.checkwx.com/metar/EBLG/decoded?x-api-key=YOUR_KEY"));
